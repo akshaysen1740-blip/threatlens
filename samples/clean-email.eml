@@ -1,0 +1,24 @@
+Return-Path: <noreply@github.com>
+Authentication-Results: mx.example.com;
+ spf=pass smtp.mailfrom=github.com;
+ dkim=pass header.d=github.com;
+ dmarc=pass header.from=github.com
+From: "GitHub" <noreply@github.com>
+To: developer@example.com
+Subject: Your weekly repository digest
+Date: Mon, 16 Nov 2026 07:00:00 +0000
+Message-ID: <digest-20261116@github.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Hi there,
+
+Here is a summary of activity in your repositories this week.
+
+- 3 pull requests merged
+- 5 new issues opened
+
+View all notifications: https://github.com/notifications
+
+Thanks,
+The GitHub Team

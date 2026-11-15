@@ -1,0 +1,22 @@
+# Node
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Env & OS
+.env
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Redis local dumps
+*.rdb
