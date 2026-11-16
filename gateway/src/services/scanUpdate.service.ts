@@ -1,8 +1,14 @@
-import { isValidObjectId } from 'mongoose';
-import { config } from '../config';
-import { logger } from '../logger';
-import { IScan, Scan, ScanDocument, TERMINAL_STATUSES, toScanDto } from '../models/Scan';
-import { emitScanUpdate } from '../socket';
+import { isValidObjectId } from "mongoose";
+import { config } from "../config";
+import { logger } from "../logger";
+import {
+  IScan,
+  Scan,
+  ScanDocument,
+  TERMINAL_STATUSES,
+  toScanDto,
+} from "../models/Scan";
+import { emitScanUpdate } from "../socket";
 
 /** Fields published by the Python worker on the events stream. */
 export interface ScanEvent {
@@ -19,10 +25,12 @@ export interface ScanEvent {
  * are not finished yet, which makes event handling idempotent: duplicate or late
  * events (for example after a timeout) are simply ignored.
  */
-export async function applyScanEvent(event: ScanEvent): Promise<ScanDocument | null> {
+export async function applyScanEvent(
+  event: ScanEvent,
+): Promise<ScanDocument | null> {
   const { scanId, userId, status } = event;
   if (!scanId || !userId || !status || !isValidObjectId(scanId)) {
-    logger.warn({ event }, 'Ignoring malformed scan event');
+    logger.warn({ event }, "Ignoring malformed scan event");
     return null;
   }
 
@@ -30,16 +38,28 @@ export async function applyScanEvent(event: ScanEvent): Promise<ScanDocument | n
   let update: Partial<IScan>;
 
   switch (status) {
-    case 'scanning':
-      update = { status: 'scanning', attempts, startedAt: new Date() };
+    case "scanning":
+      update = { status: "scanning", attempts, startedAt: new Date() };
       break;
-    case 'queued': // worker re-queued the job for a retry
-      update = { status: 'queued', attempts, error: event.error ?? null };
+    case "queued": // worker re-queued the job for a retry
+      update = { status: "queued", attempts, error: event.error ?? null };
       break;
-    case 'done': {
-      const result = JSON.parse(event.result ?? '{}');
+    case "done": {
+      let result: Record<string, any>;
+      try {
+        result = JSON.parse(event.result ?? "{}");
+      } catch (err) {
+        logger.error({ err, scanId }, "Worker sent an invalid result payload");
+        update = {
+          status: "failed",
+          attempts,
+          error: "Invalid result from scanner",
+          completedAt: new Date(),
+        };
+        break;
+      }
       update = {
-        status: 'done',
+        status: "done",
         attempts,
         riskScore: result.riskScore ?? null,
         verdict: result.verdict ?? null,
@@ -52,11 +72,16 @@ export async function applyScanEvent(event: ScanEvent): Promise<ScanDocument | n
       };
       break;
     }
-    case 'failed':
-      update = { status: 'failed', attempts, error: event.error ?? 'Scan failed', completedAt: new Date() };
+    case "failed":
+      update = {
+        status: "failed",
+        attempts,
+        error: event.error ?? "Scan failed",
+        completedAt: new Date(),
+      };
       break;
     default:
-      logger.warn({ event }, 'Ignoring scan event with unknown status');
+      logger.warn({ event }, "Ignoring scan event with unknown status");
       return null;
   }
 
@@ -78,15 +103,28 @@ export async function applyScanEvent(event: ScanEvent): Promise<ScanDocument | n
  */
 export async function failTimedOutScans(): Promise<number> {
   const cutoff = new Date(Date.now() - config.SCAN_TIMEOUT_MS);
-  const stuck = await Scan.find({ status: { $nin: TERMINAL_STATUSES }, updatedAt: { $lt: cutoff } })
-    .select('_id userId')
+  const stuck = await Scan.find({
+    status: { $nin: TERMINAL_STATUSES },
+    updatedAt: { $lt: cutoff },
+  })
+    .select("_id userId")
     .limit(100);
 
   let count = 0;
   for (const s of stuck) {
     const scan = await Scan.findOneAndUpdate(
-      { _id: s._id, status: { $nin: TERMINAL_STATUSES }, updatedAt: { $lt: cutoff } },
-      { $set: { status: 'failed', error: 'Scan timed out', completedAt: new Date() } },
+      {
+        _id: s._id,
+        status: { $nin: TERMINAL_STATUSES },
+        updatedAt: { $lt: cutoff },
+      },
+      {
+        $set: {
+          status: "failed",
+          error: "Scan timed out",
+          completedAt: new Date(),
+        },
+      },
       { new: true },
     );
     if (scan) {
@@ -94,6 +132,6 @@ export async function failTimedOutScans(): Promise<number> {
       emitScanUpdate(scan.userId.toString(), toScanDto(scan));
     }
   }
-  if (count > 0) logger.warn({ count }, 'Marked timed-out scans as failed');
+  if (count > 0) logger.warn({ count }, "Marked timed-out scans as failed");
   return count;
 }
